@@ -1,28 +1,30 @@
-﻿from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from app.routers.users import router as users_router
-from app.routers.auth import router as auth_router
+﻿# app/main.py
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.routers import auth, channels, messages, workspaces, tasks, search
+from fastapi.responses import ORJSONResponse
 
-app = FastAPI(title="SorDChat API")
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def root():
-    return """
-    <html>
-      <head><title>SorDChat API</title></head>
-      <body>
-        <h1>SorDChat API</h1>
-        <p>Status: OK</p>
-        <p>Documentação: <a href="/docs">/docs</a></p>
-      </body>
-    </html>
-    """
+app = FastAPI(default_response_class=ORJSONResponse)
 
-# Inclui os routers
-app.include_router(users_router)
-app.include_router(auth_router)
+def create_app() -> FastAPI:
+    app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],  # ajustar por ambiente
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+    app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
+    app.include_router(messages.router, prefix="/api/messages", tags=["messages"])
+    app.include_router(workspaces.router, prefix="/api/workspaces", tags=["workspaces"])
+    app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
+    app.include_router(search.router, prefix="/api/search", tags=["search"])
+
+    return app
+
+app = create_app()
