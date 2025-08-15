@@ -1,0 +1,3 @@
+"""
+Configurações do SorDChat
+"""
